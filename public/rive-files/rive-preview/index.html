@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rive Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f13;
+      --bg2: #13161c;
+      --bg3: #1a1e28;
+      --bg4: #20253200;
+      --border: #ffffff12;
+      --accent: #7c5cfc;
+      --accent2: #a78bfa;
+      --text: #e8eaf0;
+      --text2: #8892a4;
+      --text3: #4a5568;
+      --tag: #252b38;
+      --danger: #fc5c7d;
+      --success: #43d9ad;
+      --card: #161b27;
+      --shadow: 0 8px 32px rgba(0,0,0,0.5);
+      --radius: 10px;
+      --sidebar-w: 300px;
+      --ctrl-h: auto;
+    }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ─── TOP BAR ─────────────────────────────────────────── */
+    .topbar {
+      height: 52px;
+      min-height: 52px;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+      gap: 12px;
+      z-index: 100;
+    }
+    .topbar .logo {
+      display: flex; align-items: center; gap: 8px;
+      font-weight: 700; font-size: 15px; letter-spacing: -.3px;
+    }
+    .topbar .logo svg { width:22px; height:22px; }
+    .topbar .badge {
+      background: var(--accent); color: #fff;
+      font-size: 10px; font-weight: 600;
+      padding: 2px 7px; border-radius: 20px; letter-spacing:.5px;
+    }
+    .topbar-spacer { flex:1; }
+    .global-ctrl {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .global-ctrl label { font-size:12px; color:var(--text2); white-space:nowrap; }
+    .global-ctrl input {
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 4px 8px;
+      font-size:12px; font-family: inherit; width:110px;
+      transition: border-color .2s;
+    }
+    .global-ctrl input:focus { outline:none; border-color:var(--accent); }
+    .btn {
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 7px; padding: 6px 14px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      font-family: inherit; transition: background .18s, transform .1s;
+    }
+    .btn:hover { background: var(--accent2); transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn.secondary {
+      background: var(--bg3); color: var(--text2);
+      border: 1px solid var(--border);
+    }
+    .btn.secondary:hover { background: var(--bg); color: var(--text); }
+
+    /* ─── MAIN LAYOUT ─────────────────────────────────────── */
+    .main { flex: 1; display: flex; overflow: hidden; }
+
+    /* ─── SIDEBAR ─────────────────────────────────────────── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-width: var(--sidebar-w);
+      background: var(--bg2);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+    .sidebar-header {
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .sidebar-header h2 { font-size:11px; font-weight:600; color:var(--text2); letter-spacing:.8px; text-transform:uppercase; }
+    .search-box {
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); border-radius: 7px; padding: 6px 10px 6px 28px;
+      font-size: 12px; font-family: inherit;
+      transition: border-color .2s;
+    }
+    .search-box input:focus { outline:none; border-color:var(--accent); }
+    .search-box .ico {
+      position:absolute; left:8px; top:50%; transform:translateY(-50%);
+      color:var(--text3); pointer-events:none;
+    }
+    .file-tree { flex:1; overflow-y:auto; padding: 8px 0; }
+    .file-tree::-webkit-scrollbar { width:4px; }
+    .file-tree::-webkit-scrollbar-track { background:transparent; }
+    .file-tree::-webkit-scrollbar-thumb { background:var(--border); border-radius:10px; }
+
+    /* Folder */
+    .folder-group { margin-bottom: 2px; }
+    .folder-label {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      font-size: 11px; font-weight: 600; color: var(--text2);
+      letter-spacing: .6px; text-transform: uppercase;
+      cursor: pointer; user-select: none;
+      transition: color .15s;
+    }
+    .folder-label:hover { color: var(--text); }
+    .folder-label .arrow {
+      transition: transform .2s; font-size: 10px;
+      color: var(--text3);
+    }
+    .folder-label.open .arrow { transform: rotate(90deg); }
+    .folder-label .folder-ico { font-size: 13px; }
+    .folder-children { overflow: hidden; }
+
+    /* File item */
+    .file-item {
+      display: flex; align-items: center;
+      padding: 7px 14px 7px 28px;
+      gap: 7px; cursor: pointer;
+      border-left: 2px solid transparent;
+      transition: background .15s, border-color .15s;
+      font-size: 12px; color: var(--text2);
+    }
+    .file-item:hover { background: var(--bg3); color: var(--text); }
+    .file-item.active {
+      background: #7c5cfc18;
+      border-left-color: var(--accent);
+      color: var(--text);
+    }
+    .file-item .file-ico { font-size: 13px; flex-shrink:0; }
+    .file-item .file-name { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .file-item .status-dot {
+      width:6px; height:6px; border-radius:50%;
+      background: var(--text3); flex-shrink:0;
+      transition: background .2s;
+    }
+    .file-item.loaded .status-dot { background: var(--success); }
+    .file-item.error .status-dot { background: var(--danger); }
+
+    /* ─── CONTENT AREA ─────────────────────────────────────── */
+    .content {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      background: var(--bg);
+    }
+
+    /* Empty state */
+    .empty-state {
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      gap: 16px; color: var(--text3);
+    }
+    .empty-state .big-ico { font-size: 64px; opacity:.3; }
+    .empty-state h3 { font-size:16px; font-weight:600; color:var(--text2); }
+    .empty-state p { font-size:13px; max-width:280px; text-align:center; line-height:1.5; }
+
+    /* File tabs */
+    .tabs-bar {
+      display: flex;
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto; flex-shrink: 0;
+    }
+    .tabs-bar::-webkit-scrollbar { height: 2px; }
+    .tabs-bar::-webkit-scrollbar-thumb { background: var(--accent); }
+    .tab {
+      display: flex; align-items: center; gap: 7px;
+      padding: 9px 16px;
+      font-size: 12px; color: var(--text2);
+      cursor: pointer; white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      border-right: 1px solid var(--border);
+      transition: color .15s, border-color .15s, background .15s;
+      flex-shrink: 0;
+    }
+    .tab:hover { color: var(--text); background: var(--bg3); }
+    .tab.active { color: var(--accent2); border-bottom-color: var(--accent); }
+    .tab .close-btn {
+      color: var(--text3); font-size: 13px; line-height: 1;
+      padding: 0 2px; border-radius: 3px;
+      transition: color .15s, background .15s;
+    }
+    .tab .close-btn:hover { color: var(--danger); background: #fc5c7d18; }
+
+    /* Preview panels wrapper */
+    .panels-wrap {
+      flex:1; position:relative; overflow: hidden;
+    }
+
+    /* Single panel */
+    .panel {
+      position:absolute; inset:0;
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none; transition: opacity .15s;
+    }
+    .panel.visible { opacity: 1; pointer-events: all; }
+
+    /* Per-panel control bar */
+    .panel-ctrl {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      padding: 6px 14px; gap: 5px; flex-shrink: 0;
+    }
+    .ctrl-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .panel-ctrl .ctrl-group {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .panel-ctrl label {
+      font-size: 11px; color: var(--text2); white-space: nowrap;
+    }
+    .panel-ctrl input, .panel-ctrl select {
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 4px 8px;
+      font-size: 12px; font-family: inherit;
+      transition: border-color .2s;
+      cursor: pointer;
+    }
+    .panel-ctrl input { width: 130px; }
+    .panel-ctrl select { width: 150px; }
+    .panel-ctrl select.wide { width: 200px; }
+    .panel-ctrl input:focus, .panel-ctrl select:focus {
+      outline:none; border-color:var(--accent);
+    }
+
+    .ctrl-divider {
+      width: 1px; height: 22px; background: var(--border); margin: 0 2px;
+    }
+
+    .panel-ctrl .status-tag {
+      margin-left: auto;
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-weight: 600;
+      background: var(--tag);
+      color: var(--text2);
+      letter-spacing: .4px;
+    }
+    .panel-ctrl .status-tag.ok { background: #43d9ad18; color: var(--success); }
+    .panel-ctrl .status-tag.err { background: #fc5c7d18; color: var(--danger); }
+    .panel-ctrl .status-tag.loading { background: #7c5cfc18; color: var(--accent2); }
+
+    /* Canvas area */
+    .canvas-wrap {
+      flex: 1; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--bg);
+      overflow: hidden;
+    }
+
+    /* Checkerboard bg to show transparency */
+    .canvas-wrap::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        linear-gradient(45deg, #1a1e28 25%, transparent 25%),
+        linear-gradient(-45deg, #1a1e28 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #1a1e28 75%),
+        linear-gradient(-45deg, transparent 75%, #1a1e28 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+      opacity: .35;
+    }
+
+    .panel canvas {
+      position: relative; z-index: 1;
+      box-shadow: var(--shadow);
+      border-radius: 4px;
+      display: block;
+      max-width: 100%; max-height: 100%;
+    }
+
+    .error-msg {
+      position: absolute; z-index: 10;
+      background: #fc5c7d18; border: 1px solid #fc5c7d44;
+      border-radius: 10px; padding: 18px 24px;
+      color: var(--danger); font-size: 13px; text-align:center;
+      max-width: 360px;
+    }
+
+    /* canvas size controls inline */
+    .size-ctrl { display:flex; align-items:center; gap:4px; }
+    .size-ctrl input {
+      width: 58px !important;
+      text-align: center;
+    }
+    .size-ctrl span { color:var(--text3); font-size:12px; }
+
+    /* ─── ANIMATIONS ───────────────────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width:32px; height:32px; border:3px solid var(--border);
+      border-top-color: var(--accent); border-radius:50%;
+      animation: spin .7s linear infinite;
+    }
+
+    /* ─── SCROLLBAR ─────────────────────────────────────────── */
+    select option { background: var(--bg3); }
+
+    /* ─── RESIZE HANDLE ──────────────────────────────────────── */
+    .resize-handle {
+      width: 4px; cursor: col-resize;
+      background: transparent;
+      transition: background .2s;
+      flex-shrink: 0; z-index: 10;
+    }
+    .resize-handle:hover, .resize-handle.dragging { background: var(--accent); }
+
+  </style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L2 7l10 5 10-5-10-5z" fill="var(--accent)"/>
+      <path d="M2 17l10 5 10-5" stroke="var(--accent2)" stroke-width="2" stroke-linecap="round"/>
+      <path d="M2 12l10 5 10-5" stroke="var(--accent)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+    Rive Preview
+    <span class="badge">ADVANCED</span>
+  </div>
+  <div class="topbar-spacer"></div>
+  <div class="global-ctrl">
+    <label>Global artboard:</label>
+    <input type="text" id="globalArtboard" value="main" placeholder="artboard name"/>
+    <select id="globalFit">
+      <option value="layout" selected>Layout</option>
+      <option value="contain">Contain</option>
+      <option value="cover">Cover</option>
+      <option value="fill">Fill</option>
+      <option value="fitWidth">Fit Width</option>
+      <option value="fitHeight">Fit Height</option>
+      <option value="none">None</option>
+      <option value="scaleDown">Scale Down</option>
+    </select>
+    <button class="btn" onclick="applyGlobals()">Apply All</button>
+    <button class="btn secondary" onclick="openAll()">Open All</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h2>📁 Rive Files</h2>
+      <div class="search-box">
+        <span class="ico">🔍</span>
+        <input type="text" id="searchInput" placeholder="Search files…" oninput="filterFiles()"/>
+      </div>
+    </div>
+    <div class="file-tree" id="fileTree">
+      <div style="padding:24px 14px; color:var(--text3); font-size:12px; text-align:center;">
+        <div class="spinner" style="margin:0 auto 12px;"></div>
+        Loading files…
+      </div>
+    </div>
+  </div>
+
+  <!-- RESIZE HANDLE -->
+  <div class="resize-handle" id="resizeHandle"></div>
+
+  <!-- CONTENT -->
+  <div class="content" id="content">
+
+    <!-- TABS -->
+    <div class="tabs-bar" id="tabsBar" style="display:none;"></div>
+
+    <!-- PANELS WRAPPER -->
+    <div class="panels-wrap" id="panelsWrap">
+      <div class="empty-state" id="emptyState">
+        <div class="big-ico">🎨</div>
+        <h3>No file selected</h3>
+        <p>Click a .riv file from the sidebar to preview it, or use <strong>Open All</strong> to load every file at once.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rive runtime (latest high compat) -->
+<script src="https://unpkg.com/@rive-app/canvas@latest/rive.js"></script>
+
+<script>
+// ─── STATE ────────────────────────────────────────────────────────
+let allFiles = [];          // [{name, folder, path, url}]
+let openPanels = {};        // id -> { file, riveInst, artboard, fit, canvasEl, statusEl }
+let activeTabId = null;
+let fileItems = {};         // id -> DOM element in sidebar
+
+const FIT_MAP = {
+  layout:    () => rive.Fit.Layout,
+  contain:   () => rive.Fit.Contain,
+  cover:     () => rive.Fit.Cover,
+  fill:      () => rive.Fit.Fill,
+  fitWidth:  () => rive.Fit.FitWidth,
+  fitHeight: () => rive.Fit.FitHeight,
+  none:      () => rive.Fit.None,
+  scaleDown: () => rive.Fit.ScaleDown,
+};
+
+function getFit(str) {
+  return (FIT_MAP[str] || FIT_MAP['layout'])();
+}
+
+// ─── BOOT ─────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const res = await fetch('/api/files');
+    allFiles = await res.json();
+    renderFileTree(allFiles);
+  } catch(e) {
+    document.getElementById('fileTree').innerHTML =
+      `<div style="padding:16px; color:var(--danger); font-size:12px;">Failed to load files.<br>${e.message}</div>`;
+  }
+
+  // Resize handle
+  initResize();
+});
+
+// ─── FILE TREE ────────────────────────────────────────────────────
+function renderFileTree(files) {
+  const tree = document.getElementById('fileTree');
+  tree.innerHTML = '';
+
+  // Group by folder
+  const folders = {};
+  files.forEach(f => {
+    if (!folders[f.folder]) folders[f.folder] = [];
+    folders[f.folder].push(f);
+  });
+
+  Object.entries(folders).forEach(([folder, folderFiles]) => {
+    const group = document.createElement('div');
+    group.className = 'folder-group';
+
+    const label = document.createElement('div');
+    label.className = 'folder-label open';
+    label.innerHTML = `
+      <span class="arrow">▶</span>
+      <span class="folder-ico">📂</span>
+      <span>${folder || 'root'}</span>
+      <span style="margin-left:auto;font-size:10px;color:var(--text3);">${folderFiles.length}</span>
+    `;
+
+    const children = document.createElement('div');
+    children.className = 'folder-children';
+
+    folderFiles.forEach(f => {
+      const id = f.path;
+      const item = document.createElement('div');
+      item.className = 'file-item';
+      item.dataset.id = id;
+      item.innerHTML = `
+        <span class="file-ico">🎬</span>
+        <span class="file-name" title="${f.name}">${f.name}</span>
+        <span class="status-dot"></span>
+      `;
+      item.addEventListener('click', () => openFile(f));
+      children.appendChild(item);
+      fileItems[id] = item;
+    });
+
+    // Toggle folder open/close
+    label.addEventListener('click', () => {
+      const open = label.classList.toggle('open');
+      children.style.display = open ? '' : 'none';
+    });
+
+    group.appendChild(label);
+    group.appendChild(children);
+    tree.appendChild(group);
+  });
+}
+
+function filterFiles() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = allFiles.filter(f =>
+    f.name.toLowerCase().includes(q) || f.folder.toLowerCase().includes(q)
+  );
+  renderFileTree(filtered);
+}
+
+// ─── OPEN / CLOSE ─────────────────────────────────────────────────
+function openFile(file) {
+  const id = file.path;
+
+  if (openPanels[id]) {
+    switchTab(id);
+    return;
+  }
+
+  // Get globals as defaults
+  const defaultArtboard = document.getElementById('globalArtboard').value.trim() || 'main';
+  const defaultFit = document.getElementById('globalFit').value;
+
+  createPanel(file, defaultArtboard, defaultFit);
+  switchTab(id);
+}
+
+function openAll() {
+  const defaultArtboard = document.getElementById('globalArtboard').value.trim() || 'main';
+  const defaultFit = document.getElementById('globalFit').value;
+  allFiles.forEach(f => {
+    if (!openPanels[f.path]) {
+      createPanel(f, defaultArtboard, defaultFit);
+    }
+  });
+  if (allFiles.length) switchTab(allFiles[0].path);
+}
+
+function createPanel(file, artboard, fit) {
+  const id = file.path;
+
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('tabsBar').style.display = 'flex';
+
+  // ── Tab ──
+  const tab = document.createElement('div');
+  tab.className = 'tab';
+  tab.dataset.id = id;
+  tab.innerHTML = `
+    <span>🎬 ${file.name}</span>
+    <span class="close-btn" data-id="${id}" title="Close">✕</span>
+  `;
+  tab.addEventListener('click', (e) => {
+    if (e.target.classList.contains('close-btn')) {
+      closePanel(id);
+    } else {
+      switchTab(id);
+    }
+  });
+  document.getElementById('tabsBar').appendChild(tab);
+
+  // ── Panel ──
+  const panel = document.createElement('div');
+  panel.className = 'panel';
+  panel.id = `panel-${CSS.escape(id)}`;
+
+  // Control bar
+  const ctrl = document.createElement('div');
+  ctrl.className = 'panel-ctrl';
+  ctrl.innerHTML = `
+    <div class="ctrl-row">
+      <div class="ctrl-group">
+        <label>Artboard</label>
+        <select class="artboard-select wide" title="Select artboard">
+          <option value="${artboard}">${artboard}</option>
+        </select>
+      </div>
+      <div class="ctrl-divider"></div>
+      <div class="ctrl-group">
+        <label>State Machine</label>
+        <select class="sm-select wide" title="Select state machine">
+          <option value="">— none —</option>
+        </select>
+      </div>
+      <div class="ctrl-divider"></div>
+      <div class="ctrl-group">
+        <label>Fit</label>
+        <select class="fit-select">
+          <option value="layout"    ${fit==='layout'    ?'selected':''}>Layout</option>
+          <option value="contain"   ${fit==='contain'   ?'selected':''}>Contain</option>
+          <option value="cover"     ${fit==='cover'     ?'selected':''}>Cover</option>
+          <option value="fill"      ${fit==='fill'      ?'selected':''}>Fill</option>
+          <option value="fitWidth"  ${fit==='fitWidth'  ?'selected':''}>Fit Width</option>
+          <option value="fitHeight" ${fit==='fitHeight' ?'selected':''}>Fit Height</option>
+          <option value="none"      ${fit==='none'      ?'selected':''}>None</option>
+          <option value="scaleDown" ${fit==='scaleDown' ?'selected':''}>Scale Down</option>
+        </select>
+      </div>
+      <div class="ctrl-divider"></div>
+      <div class="ctrl-group size-ctrl">
+        <label>Canvas</label>
+        <input type="number" class="w-input" value="800" min="100" max="3840" title="Canvas width"/>
+        <span>×</span>
+        <input type="number" class="h-input" value="600" min="100" max="2160" title="Canvas height"/>
+        <button class="btn secondary" style="padding:4px 10px;font-size:11px;" onclick="resetCanvasSize('${id}')">Auto</button>
+      </div>
+      <div class="ctrl-divider"></div>
+      <div class="ctrl-group">
+        <button class="btn" style="padding:5px 12px;font-size:11px;" onclick="reloadPanel('${id}')">↺ Reload</button>
+      </div>
+      <span class="status-tag loading" id="status-${CSS.escape(id)}">Loading…</span>
+    </div>
+  `;
+  panel.appendChild(ctrl);
+
+  // Canvas wrap
+  const wrap = document.createElement('div');
+  wrap.className = 'canvas-wrap';
+  wrap.id = `wrap-${CSS.escape(id)}`;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = 800;
+  canvas.height = 600;
+  canvas.id = `canvas-${CSS.escape(id)}`;
+  wrap.appendChild(canvas);
+  panel.appendChild(wrap);
+
+  document.getElementById('panelsWrap').appendChild(panel);
+
+  // Store state
+  openPanels[id] = { file, riveInst: null, artboard, fit, canvasEl: canvas, stateMachine: '' };
+
+  // Wire controls
+  const artboardSelect = ctrl.querySelector('.artboard-select');
+  const smSelect = ctrl.querySelector('.sm-select');
+  const fitSelect = ctrl.querySelector('.fit-select');
+  const wInput = ctrl.querySelector('.w-input');
+  const hInput = ctrl.querySelector('.h-input');
+
+  artboardSelect.addEventListener('change', () => {
+    openPanels[id].artboard = artboardSelect.value;
+    openPanels[id].stateMachine = '';
+    reloadPanel(id);
+  });
+  smSelect.addEventListener('change', () => {
+    openPanels[id].stateMachine = smSelect.value;
+    applySMToPanel(id);
+  });
+  fitSelect.addEventListener('change', () => {
+    openPanels[id].fit = fitSelect.value;
+    applyFitToPanel(id);
+  });
+  wInput.addEventListener('change', () => resizeCanvas(id, +wInput.value, +hInput.value));
+  hInput.addEventListener('change', () => resizeCanvas(id, +wInput.value, +hInput.value));
+
+  // Mark sidebar
+  if (fileItems[id]) fileItems[id].classList.add('active');
+
+  // Load rive
+  loadRive(id);
+}
+
+// ─── RIVE LOADING ─────────────────────────────────────────────────
+function loadRive(id) {
+  const p = openPanels[id];
+  if (!p) return;
+
+  const statusEl = document.getElementById(`status-${CSS.escape(id)}`);
+  const wrap = document.getElementById(`wrap-${CSS.escape(id)}`);
+
+  // Clear old error
+  const oldErr = wrap.querySelector('.error-msg');
+  if (oldErr) oldErr.remove();
+
+  // Destroy old instance
+  if (p.riveInst) {
+    try { p.riveInst.cleanup(); } catch(e) {}
+    p.riveInst = null;
+  }
+
+  if (statusEl) {
+    statusEl.textContent = 'Loading…';
+    statusEl.className = 'status-tag loading';
+  }
+
+  const artboard = p.artboard;
+  const fitStr = p.fit;
+
+  try {
+    const r = new rive.Rive({
+      src: p.file.url,
+      canvas: p.canvasEl,
+      artboard: artboard || undefined,
+      stateMachines: p.stateMachine ? [p.stateMachine] : undefined,
+      layout: new rive.Layout({
+        fit: getFit(fitStr),
+        alignment: rive.Alignment.Center,
+      }),
+      autoplay: true,
+      onLoad: () => {
+        r.resizeDrawingSurfaceToCanvas();
+        if (statusEl) {
+          statusEl.textContent = '✓ Loaded';
+          statusEl.className = 'status-tag ok';
+        }
+        if (fileItems[id]) {
+          fileItems[id].classList.remove('error');
+          fileItems[id].classList.add('loaded');
+        }
+        // ── Populate artboard dropdown ──
+        populateArtboardDropdown(id, r);
+        // ── Populate state machine dropdown ──
+        populateSMDropdown(id, r);
+      },
+      onLoadError: (err) => {
+        const msg = document.createElement('div');
+        msg.className = 'error-msg';
+        msg.innerHTML = `<strong>Failed to load</strong><br/>${p.file.name}<br/><small>Artboard "<em>${artboard}</em>" may not exist in this file</small>`;
+        wrap.appendChild(msg);
+        if (statusEl) {
+          statusEl.textContent = '✗ Error';
+          statusEl.className = 'status-tag err';
+        }
+        if (fileItems[id]) {
+          fileItems[id].classList.remove('loaded');
+          fileItems[id].classList.add('error');
+        }
+      },
+    });
+    p.riveInst = r;
+  } catch(e) {
+    if (statusEl) { statusEl.textContent = '✗ Error'; statusEl.className = 'status-tag err'; }
+  }
+}
+
+// ─── POPULATE ARTBOARD DROPDOWN ───────────────────────────────────
+function populateArtboardDropdown(id, r) {
+  const panel = document.getElementById(`panel-${CSS.escape(id)}`);
+  if (!panel) return;
+  const sel = panel.querySelector('.artboard-select');
+  if (!sel) return;
+
+  let names = [];
+  try { names = r.artboardNames || []; } catch(e) {}
+  if (!names.length) return;
+
+  const current = openPanels[id]?.artboard || names[0];
+  sel.innerHTML = names.map(n =>
+    `<option value="${n}" ${n === current ? 'selected' : ''}>${n}</option>`
+  ).join('');
+  // Keep state in sync
+  if (openPanels[id]) openPanels[id].artboard = sel.value;
+}
+
+// ─── POPULATE STATE MACHINE DROPDOWN ─────────────────────────────
+function populateSMDropdown(id, r) {
+  const panel = document.getElementById(`panel-${CSS.escape(id)}`);
+  if (!panel) return;
+  const sel = panel.querySelector('.sm-select');
+  if (!sel) return;
+
+  let names = [];
+  try { names = r.stateMachineNames || []; } catch(e) {}
+
+  const current = openPanels[id]?.stateMachine || '';
+  sel.innerHTML = `<option value="">— none —</option>` +
+    names.map(n =>
+      `<option value="${n}" ${n === current ? 'selected' : ''}>${n}</option>`
+    ).join('');
+}
+
+// ─── SWITCH STATE MACHINE ─────────────────────────────────────────
+function applySMToPanel(id) {
+  const p = openPanels[id];
+  if (!p) return;
+  // Easiest approach: reload with new SM (Rive doesn't allow hot-swapping SM without reload)
+  reloadPanel(id);
+}
+
+// ─── FIT ──────────────────────────────────────────────────────────
+function applyFitToPanel(id) {
+  const p = openPanels[id];
+  if (!p || !p.riveInst) return;
+  p.riveInst.layout = new rive.Layout({
+    fit: getFit(p.fit),
+    alignment: rive.Alignment.Center,
+  });
+}
+
+// ─── RELOAD ───────────────────────────────────────────────────────
+function reloadPanel(id) {
+  const p = openPanels[id];
+  if (!p) return;
+  // Read the current values from dropdowns
+  const panel = document.getElementById(`panel-${CSS.escape(id)}`);
+  if (panel) {
+    const ab = panel.querySelector('.artboard-select');
+    const sm = panel.querySelector('.sm-select');
+    const fs = panel.querySelector('.fit-select');
+    if (ab) p.artboard = ab.value;
+    if (sm) p.stateMachine = sm.value;
+    if (fs) p.fit = fs.value;
+  }
+  loadRive(id);
+}
+
+// ─── CANVAS SIZE ──────────────────────────────────────────────────
+function resizeCanvas(id, w, h) {
+  const p = openPanels[id];
+  if (!p) return;
+  p.canvasEl.width = w;
+  p.canvasEl.height = h;
+  if (p.riveInst) p.riveInst.resizeDrawingSurfaceToCanvas();
+}
+
+function resetCanvasSize(id) {
+  const p = openPanels[id];
+  if (!p) return;
+  const wrap = document.getElementById(`wrap-${CSS.escape(id)}`);
+  const w = wrap.clientWidth || 800;
+  const h = wrap.clientHeight || 600;
+  p.canvasEl.width = w;
+  p.canvasEl.height = h;
+  const panel = document.getElementById(`panel-${CSS.escape(id)}`);
+  if (panel) {
+    const wInp = panel.querySelector('.w-input');
+    const hInp = panel.querySelector('.h-input');
+    if (wInp) wInp.value = w;
+    if (hInp) hInp.value = h;
+  }
+  if (p.riveInst) p.riveInst.resizeDrawingSurfaceToCanvas();
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────
+function switchTab(id) {
+  activeTabId = id;
+  // Panels
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('visible'));
+  const panelEl = document.getElementById(`panel-${CSS.escape(id)}`);
+  if (panelEl) panelEl.classList.add('visible');
+  // Tabs
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const tabEl = document.querySelector(`.tab[data-id="${CSS.escape(id)}"]`);
+  if (tabEl) tabEl.classList.add('active');
+  // Sidebar
+  Object.values(fileItems).forEach(el => el.classList.remove('active'));
+  if (fileItems[id]) fileItems[id].classList.add('active');
+}
+
+function closePanel(id) {
+  const p = openPanels[id];
+  if (!p) return;
+
+  // Cleanup rive
+  if (p.riveInst) { try { p.riveInst.cleanup(); } catch(e) {} }
+
+  // Remove DOM
+  const panelEl = document.getElementById(`panel-${CSS.escape(id)}`);
+  if (panelEl) panelEl.remove();
+  const tabEl = document.querySelector(`.tab[data-id="${CSS.escape(id)}"]`);
+  if (tabEl) tabEl.remove();
+
+  // Sidebar
+  if (fileItems[id]) {
+    fileItems[id].classList.remove('active', 'loaded', 'error');
+  }
+
+  delete openPanels[id];
+
+  // Switch to another tab or show empty
+  const remaining = Object.keys(openPanels);
+  if (remaining.length) {
+    switchTab(remaining[remaining.length - 1]);
+  } else {
+    document.getElementById('emptyState').style.display = '';
+    document.getElementById('tabsBar').style.display = 'none';
+    activeTabId = null;
+  }
+}
+
+// ─── GLOBAL APPLY ─────────────────────────────────────────────────
+function applyGlobals() {
+  const ab = document.getElementById('globalArtboard').value.trim() || 'main';
+  const fit = document.getElementById('globalFit').value;
+
+  Object.keys(openPanels).forEach(id => {
+    const p = openPanels[id];
+    p.artboard = ab;
+    p.fit = fit;
+    // Update panel inputs
+    const panel = document.getElementById(`panel-${CSS.escape(id)}`);
+    if (panel) {
+      const abInp = panel.querySelector('.artboard-input');
+      const fsInp = panel.querySelector('.fit-select');
+      if (abInp) abInp.value = ab;
+      if (fsInp) fsInp.value = fit;
+    }
+    reloadPanel(id);
+  });
+}
+
+// ─── RESIZE SIDEBAR ───────────────────────────────────────────────
+function initResize() {
+  const handle = document.getElementById('resizeHandle');
+  const sidebar = document.getElementById('sidebar');
+  let dragging = false, startX = 0, startW = 0;
+
+  handle.addEventListener('mousedown', (e) => {
+    dragging = true;
+    startX = e.clientX;
+    startW = sidebar.offsetWidth;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const delta = e.clientX - startX;
+    const newW = Math.max(180, Math.min(600, startW + delta));
+    sidebar.style.width = newW + 'px';
+    sidebar.style.minWidth = newW + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+  });
+}
+</script>
+</body>
+</html>

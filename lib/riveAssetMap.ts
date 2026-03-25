@@ -292,6 +292,23 @@ export const RIVE_ASSET_MAP = {
       max: 150,
     },
   },
+  LogoToCompanyPhone: {
+    src: "/rive-files/top/logo_to_company_phone.riv",
+    artboard: "main",
+    stateMachine: "State Machine 1",
+    autoBind: true,
+    viewModelScroll: {
+      viewModelName: "MainViewModel",
+      stateNumRanges: [
+        { path: "s1", min: 0, max: 100 },
+        { path: "s2", min: 0, max: 100 },
+        { path: "s3", min: 0, max: 100 },
+        { path: "s4", min: 0, max: 100 },
+      ],
+      min: 0,
+      max: 400,
+    },
+  },
   TopArrowIcon: {
     src: "/rive-files/top/arrow_icon.riv",
     artboard: "Box_Cursor",
